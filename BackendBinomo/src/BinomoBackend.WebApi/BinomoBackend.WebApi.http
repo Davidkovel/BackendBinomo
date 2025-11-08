@@ -1,0 +1,6 @@
+@BinomoBackend.WebApi_HostAddress = http://localhost:5197
+
+GET {{BinomoBackend.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
