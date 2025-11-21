@@ -34,7 +34,8 @@ public class TradingController : ControllerBase
     public async Task<IActionResult> OpenPosition(
         [FromBody] OpenPositionRequest request,
         CancellationToken ct)
-    {
+    { 
+        Console.WriteLine(request.ToString());
         var userId = GetUserId();
         if (userId == Guid.Empty)
             return Unauthorized();

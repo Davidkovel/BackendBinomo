@@ -179,7 +179,7 @@ public class AuthService : IAuthService
         var refreshToken = RefreshToken.Create(user.Id, refreshTokenValue, expiresAt);
         await _tokenRepository.AddAsync(refreshToken, ct);
         await _unitOfWork.SaveChangesAsync(ct);
-
+        
         return new AuthResponse(
             accessToken,
             refreshTokenValue,

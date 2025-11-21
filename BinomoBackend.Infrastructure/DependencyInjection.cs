@@ -1,8 +1,8 @@
+using System.Security.Claims;
 using System.Text;
 using BinomoBackend.Application.Interfaces;
 using BinomoBackend.Infrastructure.Configuration;
 using BinomoBackend.Infrastructure.Services;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,10 +13,32 @@ namespace BinomoBackend.Infrastructure;
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        var jwtSection = configuration.GetSection("JwtSettings");
+        services.Configure<JwtSettings>(jwtSection);
+        var jwtSettings = jwtSection.Get<JwtSettings>();
+
+        if (jwtSettings == null)
+            throw new InvalidOperationException("JwtSettings section is missing in appsettings.json");
+
+        if (string.IsNullOrWhiteSpace(jwtSettings.Secret))
+            throw new InvalidOperationException("JWT Secret is not configured");
+
+        if (string.IsNullOrWhiteSpace(jwtSettings.Issuer))
+            throw new InvalidOperationException("JWT Issuer is not configured");
+
+        if (string.IsNullOrWhiteSpace(jwtSettings.Audience))
+            throw new InvalidOperationException("JWT Audience is not configured");
+
+        // Console.WriteLine("=== JWT CONFIGURATION ===");
+        // Console.WriteLine($"Issuer: {jwtSettings.Issuer}");
+        // Console.WriteLine($"Audience: {jwtSettings.Audience}");
+        // Console.WriteLine($"Secret Length: {jwtSettings.Secret.Length}");
+        // Console.WriteLine($"Access Token Expiration: {jwtSettings.AccessTokenExpirationMinutes} minutes");
+        // Console.WriteLine($"Refresh Token Expiration: {jwtSettings.RefreshTokenExpirationDays} days");
+        // Console.WriteLine("========================");
 
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
@@ -29,19 +51,32 @@ public static class DependencyInjection
             })
             .AddJwtBearer(options =>
             {
-                var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
-            
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+                    ValidateIssuer = true,
                     ValidIssuer = jwtSettings.Issuer,
+                    ValidateAudience = true,
                     ValidAudience = jwtSettings.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtSettings.Secret)),
-                    ClockSkew = TimeSpan.Zero
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+                    RequireExpirationTime = true
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"[JWT] Authentication failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var userId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        Console.WriteLine($"[JWT] Token validated successfully for user: {userId}");
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
