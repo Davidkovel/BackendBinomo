@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Text;
 using BinomoBackend.Application.Interfaces;
+using BinomoBackend.Domain.Interfaces;
+using BinomoBackend.Infrastructure.BackroundServices;
 using BinomoBackend.Infrastructure.Configuration;
 using BinomoBackend.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -43,6 +45,10 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
         services.AddScoped<IWalletSignatureValidator, WalletSignatureValidator>();
+        services.AddSingleton<IPriceService, RedisPriceService>();
+        
+        // ============= Background Services =============
+        services.AddHostedService<BinanceWebSocketService>();
 
         services.AddAuthentication(options =>
             {

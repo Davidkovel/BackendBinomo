@@ -2,6 +2,7 @@ using BinomoBackend.Domain.Entities;
 using BinomoBackend.Domain.Enums;
 using BinomoBackend.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BinomoBackend.Persistence.Repositories;
 
@@ -55,8 +56,22 @@ public class PositionRepository : IPositionRepository
 
     public async Task UpdateAsync(Position position, CancellationToken ct = default)
     {
-        _context.Positions.Update(position);
+        var dbPosition = await _context.Positions
+            .FirstOrDefaultAsync(p => p.Id == position.Id, ct);
+
+        if (dbPosition == null)
+        {
+            throw new InvalidOperationException($"Position {position.Id} not found");
+        }
+
+        dbPosition.Status = position.Status;
+        dbPosition.ExitPrice = position.ExitPrice;
+        dbPosition.ProfitLoss = position.ProfitLoss;
+        dbPosition.ClosedAt = position.ClosedAt;
+        dbPosition.UpdatedAt = DateTime.UtcNow;
+
         await _context.SaveChangesAsync(ct);
+        
     }
 
     public async Task<decimal> GetUserTotalMarginAsync(Guid userId, CancellationToken ct = default)
@@ -65,4 +80,18 @@ public class PositionRepository : IPositionRepository
             .Where(p => p.UserId == userId && p.Status == PositionStatus.Open)
             .SumAsync(p => p.Margin, ct);
     }
+
+    public async Task DeletePositionAsync(Position position, CancellationToken ct = default)
+    {
+        var positionToDelte = await _context.Positions
+            .Where(p => p.Id == position.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (positionToDelte != null && positionToDelte.Status == PositionStatus.Closed)
+        {
+            _context.Positions.Remove(positionToDelte);
+            await _context.SaveChangesAsync(ct);
+        }
+    }
+    
 }

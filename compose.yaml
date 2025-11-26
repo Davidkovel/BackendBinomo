@@ -1,14 +1,51 @@
-﻿version: "3.9"
-services:
+﻿services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Express
     ports:
       - "1433:1433"
     volumes:
       - sql_data:/var/opt/mssql
+    networks:
+      - binomo-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - binomo-network
+
+#  binomobackend.api:
+#    image: binomobackend.api
+#    build:
+#      context: .
+#      dockerfile: BinomoBackend.Api/Dockerfile
+#    ports:
+#      - "5000:80"
+#      - "5001:443"
+#    environment:
+#      - ASPNETCORE_ENVIRONMENT=Development
+#      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=BinomoBackend;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;Encrypt=false
+#      - ConnectionStrings__Redis=redis:6379,abortConnect=false,connectTimeout=5000,syncTimeout=5000
+#    depends_on:
+#      - sqlserver
+#      - redis
+#    networks:
+#      - binomo-network
+
 volumes:
   sql_data:
+  redis_data:
+
+networks:
+  binomo-network:
+    driver: bridge

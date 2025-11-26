@@ -2,6 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 #
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7EEE51BA-1DCF-49F2-BB3C-5B26A8E13830}"
+	ProjectSection(SolutionItems) = preProject
+		src\compose.yaml = src\compose.yaml
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinomoBackend.Api", "BinomoBackend.Api\BinomoBackend.Api.csproj", "{57B6E0EB-2E9A-40D5-A1D9-40990B2471E0}"
 EndProject

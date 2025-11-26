@@ -35,7 +35,6 @@ public class TradingController : ControllerBase
         [FromBody] OpenPositionRequest request,
         CancellationToken ct)
     { 
-        Console.WriteLine(request.ToString());
         var userId = GetUserId();
         if (userId == Guid.Empty)
             return Unauthorized();
@@ -153,6 +152,8 @@ public class TradingController : ControllerBase
 
         return Ok(result.Value);
     }
+    
+    
     
     private Guid GetUserId()
     {

@@ -42,6 +42,9 @@ public class PositionConfiguration : IEntityTypeConfiguration<Position>
             
         builder.Property(p => p.ExitPrice)
             .HasColumnType("decimal(18,8)");
+        
+        builder.Property(p => p.LiquidationPrice)
+            .HasPrecision(18, 8); // 18 цифр всего, 8 после запятой
             
         builder.Property(p => p.Type)
             .IsRequired()

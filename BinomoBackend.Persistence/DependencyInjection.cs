@@ -1,10 +1,13 @@
+
 using BinomoBackend.Application.Interfaces;
 using BinomoBackend.Application.Services;
 using BinomoBackend.Domain.Interfaces;
+using BinomoBackend.Persistence.Redis;
 using BinomoBackend.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace BinomoBackend.Persistence;
 
@@ -23,12 +26,19 @@ public static class DependencyInjection
         services.AddScoped<ITradingService, TradingService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IPriceObserver, LiquidationService>();
         
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IRedisPositionRepository, RedisPositionRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
+        // // Redis
+        // services.AddSingleton<IConnectionMultiplexer>(sp =>
+        //     ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
+
 
         return services;
     }

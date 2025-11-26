@@ -11,7 +11,8 @@ public record OpenPositionRequest(
     OrderType OrderType,
     decimal? LimitPrice,
     decimal? StopLoss,
-    decimal? TakeProfit
+    decimal? TakeProfit,
+    decimal LiquidationPrice
 );
 
 public record ClosePositionRequest(

@@ -11,4 +11,5 @@ public interface IPositionRepository
     Task<Position> AddAsync(Position position, CancellationToken ct = default);
     Task UpdateAsync(Position position, CancellationToken ct = default);
     Task<decimal> GetUserTotalMarginAsync(Guid userId, CancellationToken ct = default);
+    Task DeletePositionAsync(Position position, CancellationToken ct = default);
 }
