@@ -39,11 +39,7 @@ public class RedisPositionRepository : IRedisPositionRepository
     {
         var db = _redis.GetDatabase();
         var positionJson = JsonSerializer.Serialize(position);
-        _logger.LogDebug("📦 Serialized JSON: {Json}", positionJson);
-        _logger.LogDebug("💾 Saving position to Redis: Id={Id}, Symbol={Symbol}, Type={Type}, Entry={EntryPrice}, Liq={LiquidationPrice}", 
-            position.Id, position.Symbol, position.Type, position.EntryPrice, position.LiquidationPrice);
 
-        // Транзакция для ACID
         var transaction = db.CreateTransaction();
 
         // 1. Сохраняем саму позицию
@@ -76,10 +72,6 @@ public class RedisPositionRepository : IRedisPositionRepository
             _logger.LogError("Failed to save position {PositionId} to Redis", position.Id);
             throw new Exception("Redis transaction failed");
         }
-
-        _logger.LogInformation(
-            "✅ Position {PositionId} saved to Redis and PostgreSQL",
-            position.Id);
     }
 
     public async Task<Position?> GetActivePositionAsync(Guid positionId, CancellationToken ct = default)
@@ -179,7 +171,6 @@ public class RedisPositionRepository : IRedisPositionRepository
     {
         var db = _redis.GetDatabase();
 
-        // Сначала получаем позицию для удаления из индексов
         var position = await GetActivePositionAsync(positionId, ct);
 
         if (position == null)
@@ -234,14 +225,12 @@ public class RedisPositionRepository : IRedisPositionRepository
 
         if (type == PositionType.Long)
         {
-            // Long: ликвидация если currentPrice <= liquidationPrice
             sortedSetKey = $"{LongPositionsPrefix}{symbol}";
             min = double.NegativeInfinity;
             max = (double)currentPrice;
         }
         else
         {
-            // Short: ликвидация если currentPrice >= liquidationPrice
             sortedSetKey = $"{ShortPositionsPrefix}{symbol}";
             min = (double)currentPrice;
             max = double.PositiveInfinity;

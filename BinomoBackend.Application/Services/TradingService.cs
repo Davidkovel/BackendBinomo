@@ -13,6 +13,7 @@ public class TradingService : ITradingService
 {
     private readonly IPositionRepository _positionRepository;
     private readonly IRedisPositionRepository _redisPositionRepository;
+    private readonly ILimitOrderRepository _limitOrderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TradingService> _logger;
@@ -25,12 +26,14 @@ public class TradingService : ITradingService
     public TradingService(
         IPositionRepository positionRepository,
         IRedisPositionRepository redisPositionRepository,
+        ILimitOrderRepository limitOrderRepository,
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
         ILogger<TradingService> logger)
     {
         _positionRepository = positionRepository;
         _redisPositionRepository = redisPositionRepository;
+        _limitOrderRepository = limitOrderRepository;
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -60,33 +63,15 @@ public class TradingService : ITradingService
 
             Position position;
 
-            if (request.OrderType == OrderType.Market)
-            {
-                position = Position.CreateMarketPosition(
-                    userId,
-                    request.Symbol,
-                    request.Type,
-                    request.Amount,
-                    request.Leverage,
-                    request.CurrentPrice,
-                    request.LiquidationPrice
-                );
-            }
-            else
-            {
-                if (!request.LimitPrice.HasValue)
-                    return Result.Failure<PositionResponse>("Limit price is required for limit orders");
-
-                position = Position.CreateLimitPosition(
-                    userId,
-                    request.Symbol,
-                    request.Type,
-                    request.Amount,
-                    request.Leverage,
-                    request.LimitPrice.Value,
-                    request.LiquidationPrice
-                );
-            }
+            position = Position.CreateMarketPosition(
+                userId,
+                request.Symbol,
+                request.Type,
+                request.Amount,
+                request.Leverage,
+                request.CurrentPrice,
+                request.LiquidationPrice
+            );
 
             if (request.StopLoss.HasValue)
                 position.SetStopLoss(request.StopLoss.Value);
@@ -101,12 +86,6 @@ public class TradingService : ITradingService
             await _unitOfWork.SaveChangesAsync(ct);
 
             await _unitOfWork.CommitTransactionAsync(ct);
-
-            _logger.LogInformation(
-                "Position opened: {PositionId} for user {UserId}",
-                position.Id,
-                userId
-            );
 
             return Result.Success(MapToPositionResponse(position));
         }
@@ -141,7 +120,6 @@ public class TradingService : ITradingService
             position.Close(request.CurrentPrice);
             await _positionRepository.UpdateAsync(position, ct);
 
-            // Обновляем баланс пользователя
             var balanceUpdateResult = await UpdateUserBalanceAsync(userId, position.ProfitLoss ?? 0, ct);
             if (!balanceUpdateResult.IsSuccess)
             {
@@ -407,17 +385,14 @@ public class TradingService : ITradingService
             _logger.LogInformation("💰 BALANCE DEBUG: Starting balance update for user {UserId}, P/L: {ProfitLoss}",
                 userId, profitLoss);
 
-            // 1. Получаем текущий баланс
             var currentBalance = await _userRepository.GetUserBalanceAsync(userId);
             _logger.LogInformation("💰 BALANCE DEBUG: Current balance for user {UserId}: {CurrentBalance}",
                 userId, currentBalance);
 
-            // 2. Рассчитываем новый баланс
             decimal newBalance = currentBalance + profitLoss;
             _logger.LogInformation("💰 BALANCE DEBUG: Calculation: {CurrentBalance} + {ProfitLoss} = {NewBalance}",
                 currentBalance, profitLoss, newBalance);
 
-            // 3. Проверяем достаточность баланса
             if (newBalance < 0)
             {
                 _logger.LogWarning(
@@ -428,11 +403,9 @@ public class TradingService : ITradingService
 
             _logger.LogInformation("💰 BALANCE DEBUG: New balance is valid: {NewBalance}", newBalance);
 
-            // 4. Обновляем баланс
             _logger.LogInformation("💰 BALANCE DEBUG: Calling UpdateUserBalanceAsync for user {UserId}", userId);
             await _userRepository.UpdateUserBalanceAsync(userId, newBalance);
 
-            // 5. Проверяем что баланс обновился
             var updatedBalance = await _userRepository.GetUserBalanceAsync(userId);
             _logger.LogInformation("💰 BALANCE DEBUG: Balance after update for user {UserId}: {UpdatedBalance}",
                 userId, updatedBalance);
@@ -453,38 +426,66 @@ public class TradingService : ITradingService
             return Result.Failure("Failed to update balance");
         }
     }
-    
+
     private async Task<Result> LiquidateFullBalanceAsync(Guid userId, CancellationToken ct)
     {
         try
         {
-            _logger.LogInformation("💀 FULL LIQUIDATION: Liquidating entire balance for user {UserId}", userId);
-
-            // 1. Получаем текущий баланс
             var currentBalance = await _userRepository.GetUserBalanceAsync(userId);
-            _logger.LogInformation("💀 FULL LIQUIDATION: Current balance for user {UserId}: {CurrentBalance}",
-                userId, currentBalance);
 
-            // 2. ✅ ОБНУЛЯЕМ БАЛАНС (полная ликвидация)
             decimal newBalance = 0;
-            _logger.LogInformation("💀 FULL LIQUIDATION: Setting balance to 0 for user {UserId}. Old balance: {OldBalance}",
-                userId, currentBalance);
 
-            // 3. Обновляем баланс
             await _userRepository.UpdateUserBalanceAsync(userId, newBalance);
 
-            // 4. Проверяем что баланс обновился
             var updatedBalance = await _userRepository.GetUserBalanceAsync(userId);
-            _logger.LogInformation("💀 FULL LIQUIDATION: Balance after full liquidation for user {UserId}: {UpdatedBalance}",
-                userId, updatedBalance);
-
             return Result.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "💀 FULL LIQUIDATION: Error liquidating balance for user {UserId}", userId);
+            _logger.LogError(ex, "Error liquidating balance for user {UserId}", userId);
             return Result.Failure("Failed to liquidate balance");
         }
+    }
+
+    public async Task<LimitOrder> CreateLimitOrderAsync(
+        LimitOrder order,
+        CancellationToken ct = default)
+    {
+        await _limitOrderRepository.SavePendingOrderAsync(order, ct);
+        
+        return order;
+    }
+
+    public async Task<List<LimitOrder>> GetUserLimitOrdersAsync(
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        return await _limitOrderRepository.GetUserPendingOrdersAsync(userId, ct);
+    }
+
+    public async Task CancelLimitOrderAsync(
+        Guid orderId,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var order = await _limitOrderRepository.GetOrderByIdAsync(orderId, ct);
+
+        if (order == null)
+        {
+            throw new InvalidOperationException("Order not found");
+        }
+
+        if (order.UserId != userId)
+        {
+            throw new UnauthorizedAccessException("Not your order");
+        }
+
+        if (order.Status != LimitOrderStatus.Pending)
+        {
+            throw new InvalidOperationException("Order cannot be cancelled");
+        }
+
+        await _limitOrderRepository.RemovePendingOrderAsync(orderId, ct);
     }
 
 

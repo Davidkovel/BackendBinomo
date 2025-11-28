@@ -95,11 +95,14 @@ public class Position
         string symbol,
         PositionType type,
         decimal amount,
+        decimal margin,
         int leverage,
+        decimal? stopLoss,
+        decimal? takeProfit,
         decimal limitPrice,
-        decimal liquidationPrice)
+        decimal liquidationPrice,
+        decimal entryPrice)
     {
-        var margin = amount / leverage;
         
         return new Position
         {
@@ -107,11 +110,13 @@ public class Position
             UserId = userId,
             Symbol = symbol,
             Type = type,
-            EntryPrice = 0, // Will be set when order fills
+            EntryPrice = entryPrice,
             Amount = amount,
             Leverage = leverage,
             Margin = margin,
-            Status = PositionStatus.Pending,
+            StopLoss = stopLoss,
+            TakeProfit = takeProfit,
+            Status = PositionStatus.Open,
             OrderType = OrderType.Limit,
             LimitPrice = limitPrice,
             CreatedAt = DateTime.UtcNow,

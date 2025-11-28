@@ -45,7 +45,6 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
         services.AddScoped<IWalletSignatureValidator, WalletSignatureValidator>();
-        services.AddSingleton<IPriceService, RedisPriceService>();
         
         // ============= Background Services =============
         services.AddHostedService<BinanceWebSocketService>();

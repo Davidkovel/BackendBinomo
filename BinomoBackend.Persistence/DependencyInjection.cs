@@ -27,12 +27,14 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPriceObserver, LiquidationService>();
+        services.AddScoped<IPriceObserver, LimitOrderService>();
         
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRedisPositionRepository, RedisPositionRepository>();
+        services.AddScoped<ILimitOrderRepository, RedisLimitOrderRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         
         // // Redis

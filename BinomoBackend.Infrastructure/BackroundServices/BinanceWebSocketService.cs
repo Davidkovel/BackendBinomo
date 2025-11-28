@@ -14,7 +14,6 @@ public class BinanceWebSocketService : BackgroundService
 {
     private readonly ILogger<BinanceWebSocketService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IPriceService _priceService;
 
     private const string StreamUrl = "wss://fstream.binance.com/stream?streams=" +
                                      "btcusdt@markPrice/" +
@@ -28,12 +27,10 @@ public class BinanceWebSocketService : BackgroundService
 
     public BinanceWebSocketService(
         ILogger<BinanceWebSocketService> logger,
-        IServiceProvider serviceProvider,
-        IPriceService priceService)
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _priceService = priceService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -93,10 +90,6 @@ public class BinanceWebSocketService : BackgroundService
 
             var price = decimal.Parse(priceStr, CultureInfo.InvariantCulture);
             
-            // Сохраняем в Redis и публикуем
-            await _priceService.UpdatePriceAsync(symbol, price, ct);
-            
-            // Уведомляем наблюдателей через scope
             using var scope = _serviceProvider.CreateScope();
             var observers = scope.ServiceProvider.GetServices<IPriceObserver>();
             
