@@ -9,8 +9,11 @@ public class PositionHistoryConfiguration : IEntityTypeConfiguration<PositionsHi
     public void Configure(EntityTypeBuilder<PositionsHistory> builder)
     {
         builder.ToTable("PositionsHistory");
-
-        builder.HasKey(ph => ph.Id);
+        
+        // ⚠️ ВАЖНО: ClosedAt должен быть в Primary Key для партиционирования
+        builder.HasKey(ph => new { ph.Id, ph.ClosedAt }); // Composite Primary Key 
+        //builder.HasKey(ph => ph.Id);
+        
 
         builder.Property(ph => ph.Symbol)
             .IsRequired()
@@ -54,9 +57,16 @@ public class PositionHistoryConfiguration : IEntityTypeConfiguration<PositionsHi
             .HasForeignKey(ph => ph.UserId);
 
         // Indexes
-        builder.HasIndex(ph => ph.UserId);
-        builder.HasIndex(ph => ph.Symbol);
-        builder.HasIndex(ph => ph.Status);
-        builder.HasIndex(ph => ph.ClosedAt);
+        // builder.HasIndex(ph => ph.UserId);
+        // builder.HasIndex(ph => ph.Symbol);
+        // builder.HasIndex(ph => ph.Status);
+        // builder.HasIndex(ph => ph.ClosedAt);
+        
+        builder.HasIndex(ph => ph.UserId)
+            .HasDatabaseName("IX_PositionsHistory_UserId");
+            
+        builder.HasIndex(ph => new { ph.UserId, ph.ClosedAt })
+            .HasDatabaseName("IX_PositionsHistory_UserId_ClosedAt")
+            .IsDescending(false, true);
     }
 }

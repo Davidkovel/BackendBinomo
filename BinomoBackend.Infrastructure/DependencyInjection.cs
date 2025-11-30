@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using BinomoBackend.Application.Interfaces;
 using BinomoBackend.Domain.Interfaces;
+using BinomoBackend.Infrastructure.BackgroundServices;
 using BinomoBackend.Infrastructure.BackroundServices;
 using BinomoBackend.Infrastructure.Configuration;
 using BinomoBackend.Infrastructure.Services;
@@ -48,7 +49,9 @@ public static class DependencyInjection
         
         // ============= Background Services =============
         services.AddHostedService<BinanceWebSocketService>();
-
+        services.AddHostedService<PartitionInitializationService>();
+        services.AddHostedService<PartitionManagementService>();
+            
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

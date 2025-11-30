@@ -6,6 +6,7 @@ using BinomoBackend.Infrastructure;
 using BinomoBackend.Persistence;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.Data.SqlClient;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 
