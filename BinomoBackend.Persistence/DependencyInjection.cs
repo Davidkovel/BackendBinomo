@@ -28,7 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPriceObserver, LiquidationService>();
         services.AddScoped<IPriceObserver, LimitOrderService>();
-        
+
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();

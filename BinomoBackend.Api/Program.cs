@@ -7,6 +7,7 @@ using BinomoBackend.Persistence;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 
@@ -69,6 +70,19 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "uploads")),
+    RequestPath = "/uploads"
+});
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
