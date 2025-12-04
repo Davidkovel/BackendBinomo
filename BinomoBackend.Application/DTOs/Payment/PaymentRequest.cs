@@ -20,11 +20,6 @@ public record WithdrawalRequestDto
     public decimal Amount { get; init; }
     public string CardNumber { get; init; } = string.Empty;
     public string FullName { get; init; } = string.Empty;
-
-    // Вместо IFormFile - Stream + metadata
-    public Stream ReceiptStream { get; init; } = Stream.Null;
-    public string ReceiptFileName { get; init; } = string.Empty;
-    public string ReceiptContentType { get; init; } = string.Empty;
 }
 
 /// <summary>

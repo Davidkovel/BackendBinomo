@@ -129,17 +129,9 @@ public class PaymentProcessorService : BackgroundService
                 await HandleDepositConfirmed(depositEvent, ct);
                 break;
 
-            // case WithdrawalInitiatedEvent withdrawalEvent:
-            //     await HandleWithdrawalInitiated(scope, withdrawalEvent, ct);
-            //     break;
-            //
-            // case CommissionPaidEvent commissionEvent:
-            //     await HandleCommissionPaid(scope, commissionEvent, ct);
-            //     break;
-            //
-            // case WithdrawalCompletedEvent completedEvent:
-            //     await HandleWithdrawalCompleted(scope, completedEvent, ct);
-            //     break;
+            case WithdrawalInitiatedEvent withdrawalEvent:
+                await HandleWithdrawal(withdrawalEvent, ct);
+                break;
 
             default:
                 _logger.LogWarning("⚠️ Unknown event type: {EventType}", @event.GetType().Name);
@@ -156,10 +148,10 @@ public class PaymentProcessorService : BackgroundService
             @event.Amount
         );
         using var scope = _serviceProvider.CreateScope();
-        
+
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        
+
         try
         {
             await unitOfWork.BeginTransactionAsync(ct);
@@ -174,6 +166,40 @@ public class PaymentProcessorService : BackgroundService
             _logger.LogInformation(
                 "✅ Deposit confirmed: UserId={UserId}, NewBalance={NewBalance}",
                 @event.UserId, newBalance
+            );
+        }
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
+    }
+
+    public async Task HandleWithdrawal(WithdrawalInitiatedEvent withdrawalEvent, CancellationToken ct)
+    {
+        _logger.LogInformation(
+            "✅ Confirming withdrawal event: Amount={Amount}",
+            @withdrawalEvent.Amount
+        );
+        using var scope = _serviceProvider.CreateScope();
+
+        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        try
+        {
+            await unitOfWork.BeginTransactionAsync(ct);
+
+            var currentBalance = await userRepository.GetUserBalanceAsync(@withdrawalEvent.UserId);
+            var newBalance = currentBalance - @withdrawalEvent.Amount;
+            await userRepository.UpdateUserBalanceAsync(@withdrawalEvent.UserId, newBalance);
+
+            await unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.CommitTransactionAsync(ct);
+
+            _logger.LogInformation(
+                "✅ Withdrawal confirmed: UserId={UserId}, NewBalance={NewBalance}",
+                @withdrawalEvent.UserId, newBalance
             );
         }
         catch

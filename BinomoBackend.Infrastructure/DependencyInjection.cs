@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<IPaymentService, PaymentService>();
         
         // ============= Background Services =============
+        services.AddHostedService<KafkaInitializationService>();
         services.AddHostedService<BinanceWebSocketService>();
         services.AddHostedService<PartitionInitializationService>();
         services.AddHostedService<PartitionManagementService>();
