@@ -1,7 +1,12 @@
 using System.Security.Claims;
 using System.Text;
 using BinomoBackend.Application.Interfaces;
+using BinomoBackend.Application.Services;
+using BinomoBackend.Domain.Interfaces;
+using BinomoBackend.Infrastructure.BackgroundServices;
+using BinomoBackend.Infrastructure.BackroundServices;
 using BinomoBackend.Infrastructure.Configuration;
+using BinomoBackend.Infrastructure.Kafka;
 using BinomoBackend.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -43,7 +48,22 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
         services.AddScoped<IWalletSignatureValidator, WalletSignatureValidator>();
-
+        services.AddScoped<IFileStorage, LocalFileStorageService>();
+        services.AddScoped<IPaymentService, PaymentService>();
+        
+        // ============= Background Services =============
+        services.AddHostedService<KafkaInitializationService>();
+        services.AddHostedService<BinanceWebSocketService>();
+        services.AddHostedService<PartitionInitializationService>();
+        services.AddHostedService<PartitionManagementService>();
+        services.AddHostedService<PaymentProcessorService>();
+            
+        // Kafka
+        services.Configure<KafkaSettings>(
+            configuration.GetSection("Kafka"));
+        services.AddSingleton<IKafkaProducer, KafkaProducer>();
+        
+        
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

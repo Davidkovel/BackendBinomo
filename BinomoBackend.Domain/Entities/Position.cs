@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BinomoBackend.Domain.Entities;
 
 using BinomoBackend.Domain.Entities;
@@ -13,19 +15,51 @@ public class Position
     public decimal Amount { get; private set; }
     public int Leverage { get; private set; }
     public decimal Margin { get; private set; }
-    public PositionStatus Status { get; private set; }
+    public PositionStatus Status { get; set; }
     public OrderType OrderType { get; private set; }
     public decimal? LimitPrice { get; private set; }
     public decimal? StopLoss { get; private set; }
     public decimal? TakeProfit { get; private set; }
-    public decimal? ExitPrice { get; private set; }
-    public decimal? ProfitLoss { get; private set; }
+    public decimal? ExitPrice { get; set; }
+    public decimal? ProfitLoss { get; set; }
+    public decimal? LiquidationPrice {get; private set;}
     public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-    public DateTime? ClosedAt { get; private set; }
+    public DateTime? UpdatedAt { get; set; }
+    public DateTime? ClosedAt { get; set; }
     public User User { get; private set; }
 
     private Position() { }
+    
+    [JsonConstructor]
+    public Position(
+        Guid id, Guid userId, string symbol, PositionType type,
+        decimal entryPrice, decimal amount, int leverage, decimal margin,
+        PositionStatus status, OrderType orderType, 
+        decimal? limitPrice, decimal? stopLoss, decimal? takeProfit,
+        decimal? exitPrice, decimal? profitLoss, decimal? liquidationPrice,
+        DateTime createdAt, DateTime? updatedAt, DateTime? closedAt)
+    {
+        Id = id;
+        UserId = userId;
+        Symbol = symbol;
+        Type = type;
+        EntryPrice = entryPrice;
+        Amount = amount;
+        Leverage = leverage;
+        Margin = margin;
+        Status = status;
+        OrderType = orderType;
+        LimitPrice = limitPrice;
+        StopLoss = stopLoss;
+        TakeProfit = takeProfit;
+        ExitPrice = exitPrice;
+        ProfitLoss = profitLoss;
+        LiquidationPrice = liquidationPrice;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
+        ClosedAt = closedAt;
+    }
+
 
     public static Position CreateMarketPosition(
         Guid userId,
@@ -33,7 +67,8 @@ public class Position
         PositionType type,
         decimal amount,
         int leverage,
-        decimal currentPrice)
+        decimal currentPrice,
+        decimal liquidationPrice)
     {
         var margin = amount / leverage;
         
@@ -50,7 +85,8 @@ public class Position
             Status = PositionStatus.Open,
             OrderType = OrderType.Market,
             CreatedAt = DateTime.UtcNow,
-            ProfitLoss = 0
+            ProfitLoss = 0,
+            LiquidationPrice = liquidationPrice
         };
     }
 
@@ -59,10 +95,14 @@ public class Position
         string symbol,
         PositionType type,
         decimal amount,
+        decimal margin,
         int leverage,
-        decimal limitPrice)
+        decimal? stopLoss,
+        decimal? takeProfit,
+        decimal limitPrice,
+        decimal liquidationPrice,
+        decimal entryPrice)
     {
-        var margin = amount / leverage;
         
         return new Position
         {
@@ -70,15 +110,18 @@ public class Position
             UserId = userId,
             Symbol = symbol,
             Type = type,
-            EntryPrice = 0, // Will be set when order fills
+            EntryPrice = entryPrice,
             Amount = amount,
             Leverage = leverage,
             Margin = margin,
-            Status = PositionStatus.Pending,
+            StopLoss = stopLoss,
+            TakeProfit = takeProfit,
+            Status = PositionStatus.Open,
             OrderType = OrderType.Limit,
             LimitPrice = limitPrice,
             CreatedAt = DateTime.UtcNow,
-            ProfitLoss = 0
+            ProfitLoss = 0,
+            LiquidationPrice = liquidationPrice
         };
     }
 
@@ -98,6 +141,15 @@ public class Position
     {
         if (Status != PositionStatus.Open) return;
 
+        ExitPrice = exitPrice;
+        UpdateProfitLoss(exitPrice);
+        Status = PositionStatus.Closed;
+        ClosedAt = DateTime.UtcNow;
+    }
+
+    public void Liquidate(decimal exitPrice)
+    {
+        if (Status != PositionStatus.Open) return;
         ExitPrice = exitPrice;
         UpdateProfitLoss(exitPrice);
         Status = PositionStatus.Closed;

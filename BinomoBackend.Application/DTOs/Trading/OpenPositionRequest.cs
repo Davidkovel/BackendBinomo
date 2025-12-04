@@ -11,7 +11,8 @@ public record OpenPositionRequest(
     OrderType OrderType,
     decimal? LimitPrice,
     decimal? StopLoss,
-    decimal? TakeProfit
+    decimal? TakeProfit,
+    decimal LiquidationPrice
 );
 
 public record ClosePositionRequest(
@@ -24,6 +25,19 @@ public record UpdatePositionRequest(
     decimal? StopLoss,
     decimal? TakeProfit
 );
+
+public record CreateLimitOrderRequest
+{
+    public string Symbol { get; init; }
+    public PositionType Type { get; init; }
+    public OrderSide Side { get; init; }
+    public decimal LimitPrice { get; init; }
+    public decimal Amount { get; init; }
+    public decimal Margin { get; init; }
+    public int Leverage { get; init; }
+    public decimal? StopLoss { get; init; }
+    public decimal? TakeProfit { get; init; }
+}
 
 public record PositionResponse(
     Guid Id,

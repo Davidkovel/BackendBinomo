@@ -2,6 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 #
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7EEE51BA-1DCF-49F2-BB3C-5B26A8E13830}"
+	ProjectSection(SolutionItems) = preProject
+		src\compose.yaml = src\compose.yaml
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinomoBackend.Api", "BinomoBackend.Api\BinomoBackend.Api.csproj", "{57B6E0EB-2E9A-40D5-A1D9-40990B2471E0}"
 EndProject
@@ -12,6 +15,13 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinomoBackend.Infrastructure", "BinomoBackend.Infrastructure\BinomoBackend.Infrastructure.csproj", "{743F7DB9-63DC-4D6F-ADA4-161307C86C75}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinomoBackend.Persistence", "BinomoBackend.Persistence\BinomoBackend.Persistence.csproj", "{6260E9E4-205E-47D7-9875-27BBF6CDF9FA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution items", "{CF655EB0-E6D0-4EE6-A3BF-016EC5278437}"
+	ProjectSection(SolutionItems) = preProject
+		src\compose.yaml = src\compose.yaml
+		.gitignore = .gitignore
+		src\.dockerignore = src\.dockerignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

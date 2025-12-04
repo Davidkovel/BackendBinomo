@@ -2,12 +2,13 @@ using System.Security.Claims;
 using BinomoBackend.Application.DTOs.Auth;
 using BinomoBackend.Application.DTOs.Trading;
 using BinomoBackend.Application.Interfaces;
+using BinomoBackend.Domain.Entities;
+using BinomoBackend.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
 namespace BinomoBackend.Api.Controllers;
-
 
 [ApiController]
 [Route("api/[controller]")]
@@ -34,12 +35,11 @@ public class TradingController : ControllerBase
     public async Task<IActionResult> OpenPosition(
         [FromBody] OpenPositionRequest request,
         CancellationToken ct)
-    { 
-        Console.WriteLine(request.ToString());
+    {
         var userId = GetUserId();
         if (userId == Guid.Empty)
             return Unauthorized();
-        
+
         var result = await _tradingService.OpenPositionAsync(userId, request, ct);
 
         if (result.IsFailure)
@@ -153,7 +153,95 @@ public class TradingController : ControllerBase
 
         return Ok(result.Value);
     }
+
+    /// <summary>
+    /// Open limit order
+    /// </summary>
+    [HttpPost("limitorder/open")]
+    [ProducesResponseType(typeof(LimitOrder), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LimitOrder>> CreateOrder(
+        [FromBody] CreateLimitOrderRequest request)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var openOrder = new LimitOrder
+            {
+                UserId = userId,
+                Symbol = request.Symbol,
+                Type = request.Type,
+                Side = request.Side,
+                LimitPrice = request.LimitPrice,
+                Amount = request.Amount,
+                Margin = request.Margin,
+                Leverage = request.Leverage,
+                StopLoss = request.StopLoss,
+                TakeProfit = request.TakeProfit,
+                Status = LimitOrderStatus.Pending
+            };
+
+            var order = await _tradingService.CreateLimitOrderAsync(openOrder);
+
+            return Ok(order);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
     
+
+    /// <summary>
+    /// get all limit orders
+    /// </summary>
+    [HttpGet("limit_orders")]
+    [ProducesResponseType(typeof(List<LimitOrder>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<LimitOrder>>> GetMyOrders()
+    {
+        try
+        {
+            var userId = GetUserId();
+            var orders = await _tradingService.GetUserLimitOrdersAsync(userId);
+            return Ok(orders);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Cancel limit order
+    /// </summary>
+    [HttpDelete("cancel_limit_order/{orderId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult> CancelOrder(Guid orderId)
+    {
+        try
+        {
+            var userId = GetUserId();
+            await _tradingService.CancelLimitOrderAsync(orderId, userId);
+            return Ok(new { message = "Order cancelled" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+
     private Guid GetUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

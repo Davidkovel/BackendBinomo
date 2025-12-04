@@ -17,7 +17,7 @@ namespace BinomoBackend.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -47,6 +47,10 @@ namespace BinomoBackend.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("LimitPrice")
+                        .HasColumnType("decimal(18,8)");
+
+                    b.Property<decimal?>("LiquidationPrice")
+                        .HasPrecision(18, 8)
                         .HasColumnType("decimal(18,8)");
 
                     b.Property<decimal>("Margin")
@@ -105,8 +109,10 @@ namespace BinomoBackend.Persistence.Migrations
             modelBuilder.Entity("BinomoBackend.Domain.Entities.PositionsHistory", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,8)");
@@ -114,9 +120,6 @@ namespace BinomoBackend.Persistence.Migrations
                     b.Property<string>("CloseReason")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -173,15 +176,14 @@ namespace BinomoBackend.Persistence.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id", "ClosedAt");
 
-                    b.HasIndex("ClosedAt");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_PositionsHistory_UserId");
 
-                    b.HasIndex("Status");
-
-                    b.HasIndex("Symbol");
-
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "ClosedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_PositionsHistory_UserId_ClosedAt");
 
                     b.ToTable("PositionsHistory", (string)null);
                 });

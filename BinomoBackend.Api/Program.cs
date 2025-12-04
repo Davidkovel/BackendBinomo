@@ -6,7 +6,10 @@ using BinomoBackend.Infrastructure;
 using BinomoBackend.Persistence;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +28,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-
+    
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -42,13 +45,14 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Redis
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")));
+
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<SignUpRequestValidator>();
 builder.Services.AddFluentValidationAutoValidation();
-
-// Application Services
-builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Infrastructure & Persistence
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -66,6 +70,19 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "uploads")),
+    RequestPath = "/uploads"
+});
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
