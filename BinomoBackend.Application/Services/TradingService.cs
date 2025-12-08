@@ -383,38 +383,24 @@ public class TradingService : ITradingService
                 userId, profitLoss);
 
             var currentBalance = await _userRepository.GetUserBalanceAsync(userId);
-            _logger.LogInformation("💰 BALANCE DEBUG: Current balance for user {UserId}: {CurrentBalance}",
-                userId, currentBalance);
 
             decimal newBalance = currentBalance + profitLoss;
-            _logger.LogInformation("💰 BALANCE DEBUG: Calculation: {CurrentBalance} + {ProfitLoss} = {NewBalance}",
-                currentBalance, profitLoss, newBalance);
 
             if (newBalance < 0)
             {
-                _logger.LogWarning(
-                    "💰 BALANCE DEBUG: Insufficient balance. User {UserId} would have negative balance: {NewBalance}",
-                    userId, newBalance);
                 return Result.Failure("Insufficient balance to cover losses");
             }
 
-            _logger.LogInformation("💰 BALANCE DEBUG: New balance is valid: {NewBalance}", newBalance);
-
-            _logger.LogInformation("💰 BALANCE DEBUG: Calling UpdateUserBalanceAsync for user {UserId}", userId);
             await _userRepository.UpdateUserBalanceAsync(userId, newBalance);
+            //await _userRepository.UpdateUserBalancePessimisticAsync(userId, newBalance);
 
             var updatedBalance = await _userRepository.GetUserBalanceAsync(userId);
-            _logger.LogInformation("💰 BALANCE DEBUG: Balance after update for user {UserId}: {UpdatedBalance}",
-                userId, updatedBalance);
 
             if (Math.Abs(updatedBalance - newBalance) > 0.01m)
             {
-                _logger.LogError("💰 BALANCE DEBUG: Balance update mismatch! Expected: {Expected}, Actual: {Actual}",
-                    newBalance, updatedBalance);
                 return Result.Failure("Balance update failed - values don't match");
             }
 
-            _logger.LogInformation("💰 BALANCE DEBUG: Balance successfully updated for user {UserId}", userId);
             return Result.Success();
         }
         catch (Exception ex)
@@ -433,6 +419,7 @@ public class TradingService : ITradingService
             decimal newBalance = 0;
 
             await _userRepository.UpdateUserBalanceAsync(userId, newBalance);
+            //await _userRepository.UpdateUserBalancePessimisticAsync(userId, newBalance);
 
             var updatedBalance = await _userRepository.GetUserBalanceAsync(userId);
             return Result.Success();

@@ -18,7 +18,7 @@ public class UnitOfWork : IUnitOfWork
         return await _context.SaveChangesAsync(ct);
     }
 
-    public async Task BeginTransactionAsync(CancellationToken ct = default)
+    public async Task BeginTransactionAsync(CancellationToken ct = default) // IsolationLevel Level  = IsolationLevel.ReadCommited default
     {
         _transaction = await _context.Database.BeginTransactionAsync(ct);
     }

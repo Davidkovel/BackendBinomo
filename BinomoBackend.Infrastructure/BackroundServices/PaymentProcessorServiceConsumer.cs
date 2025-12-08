@@ -158,8 +158,10 @@ public class PaymentProcessorService : BackgroundService
 
             var currentBalance = await userRepository.GetUserBalanceAsync(@event.UserId);
             var newBalance = currentBalance + @event.Amount;
+            
             await userRepository.UpdateUserBalanceAsync(@event.UserId, newBalance);
-
+            //await userRepository.UpdateUserBalancePessimisticAsync(@event.UserId, newBalance);
+            
             await unitOfWork.SaveChangesAsync(ct);
             await unitOfWork.CommitTransactionAsync(ct);
 
@@ -192,7 +194,9 @@ public class PaymentProcessorService : BackgroundService
 
             var currentBalance = await userRepository.GetUserBalanceAsync(@withdrawalEvent.UserId);
             var newBalance = currentBalance - @withdrawalEvent.Amount;
+            
             await userRepository.UpdateUserBalanceAsync(@withdrawalEvent.UserId, newBalance);
+            //await userRepository.UpdateUserBalancePessimisticAsync(@withdrawalEvent.UserId, newBalance);
 
             await unitOfWork.SaveChangesAsync(ct);
             await unitOfWork.CommitTransactionAsync(ct);

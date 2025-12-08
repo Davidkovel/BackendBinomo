@@ -114,6 +114,44 @@ public class UserRepository : IUserRepository
             throw;
         }
     }
+    
+    public async Task UpdateUserBalancePessimisticAsync(Guid userId, decimal newBalance)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            _logger.LogInformation("🔒 Attempting to lock user {UserId} for balance update...", userId);
+
+            // SQL with UPDLOCK
+            var user = await _context.Users
+                .FromSqlRaw("SELECT * FROM Users WITH (UPDLOCK, ROWLOCK) WHERE Id = {0}", userId)
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                _logger.LogError("❌ User {UserId} not found", userId);
+                throw new InvalidOperationException("User not found");
+            }
+
+            _logger.LogInformation("🔒 User {UserId} locked. Old balance: {OldBalance}", 
+                userId, user.Balance);
+
+            user.Balance = newBalance;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("✅ Balance updated successfully for user {UserId}", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error updating balance with pessimistic lock for user {UserId}", userId);
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
 
 
     public async Task<User> AddAsync(User user, CancellationToken ct = default)
