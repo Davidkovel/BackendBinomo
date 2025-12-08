@@ -245,7 +245,6 @@ public class PartitionManagementService : BackgroundService
         DateTime boundary,
         CancellationToken ct)
     {
-        // Создаем архивную таблицу если не существует
         var createArchiveTableSql = @"
             IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PositionsHistory_Archive')
             BEGIN

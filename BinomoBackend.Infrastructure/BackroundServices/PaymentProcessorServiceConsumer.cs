@@ -13,7 +13,7 @@ using IsolationLevel = Confluent.Kafka.IsolationLevel;
 
 namespace BinomoBackend.Infrastructure.BackroundServices;
 
-// Consumer
+// Kafka Consumer
 public class PaymentProcessorService : BackgroundService
 {
     private readonly IConsumer<string, string> _consumer;

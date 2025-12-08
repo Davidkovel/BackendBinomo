@@ -35,6 +35,22 @@ public class RedisPositionRepository : IRedisPositionRepository
 
     // ============= HOT DATA (Redis) =============
 
+    public async Task<decimal?> GetPosititionProfit(Guid positionId, CancellationToken ct = default)
+    {
+        var db = _redis.GetDatabase();
+        var positionKey = $"{PositionKey}{positionId}";
+        
+        var json = await db.StringGetAsync(positionKey);
+
+        if (json.IsNullOrEmpty)
+        {
+            return null;
+        }
+        
+        var position = JsonSerializer.Deserialize<Position>(json);
+        return position?.ProfitLoss;
+    }
+
     public async Task SaveActivePositionAsync(Position position, CancellationToken ct = default)
     {
         var db = _redis.GetDatabase();

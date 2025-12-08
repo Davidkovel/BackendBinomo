@@ -49,6 +49,30 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")));
 
+// Redis cluster
+// builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+// {
+//     var redisOptions = new ConfigurationOptions
+//     {
+//         AbortOnConnectFail = false,
+//         AllowAdmin = true,
+//         TieBreaker = "",
+//         CommandMap = CommandMap.Default,
+//         SyncTimeout = 5000
+//     };
+//
+//     var nodes = builder.Configuration
+//         .GetSection("RedisCluster:Nodes")
+//         .Get<string[]>();
+//
+//     foreach (var node in nodes)
+//     {
+//         redisOptions.EndPoints.Add(node);
+//     }
+//
+//     return ConnectionMultiplexer.Connect(redisOptions);
+// });
+
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<SignUpRequestValidator>();

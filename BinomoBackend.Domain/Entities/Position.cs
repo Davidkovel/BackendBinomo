@@ -132,8 +132,14 @@ public class Position
         var priceDiff = Type == PositionType.Long 
             ? currentPrice - EntryPrice 
             : EntryPrice - currentPrice;
+        
+        
+        var margin = Amount / Leverage;
 
-        ProfitLoss = (priceDiff / EntryPrice) * Amount * Leverage;
+        ProfitLoss = (priceDiff / EntryPrice) * margin * Leverage;
+
+        Console.WriteLine($"pricdeDiff: {priceDiff}, EntryPrice: {EntryPrice}, Amount: {Amount}, Leverage: {Leverage}");
+        Console.WriteLine($"AAAAAAAAAA ProfitLoss: {ProfitLoss}");
         UpdatedAt = DateTime.UtcNow;
     }
 

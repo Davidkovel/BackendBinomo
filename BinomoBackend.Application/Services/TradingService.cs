@@ -202,9 +202,6 @@ public class TradingService : ITradingService
 
             var result = positions.Select(p =>
             {
-                var currentPrice = 102000;
-                p.UpdateProfitLoss(currentPrice);
-
                 var profitLossPercentage = (p.ProfitLoss / p.Margin) * 100;
 
                 return new ActivePositionResponse(
@@ -212,7 +209,7 @@ public class TradingService : ITradingService
                     p.Symbol,
                     p.Type,
                     p.EntryPrice,
-                    currentPrice,
+                    0,
                     p.Amount,
                     p.Leverage,
                     p.Margin,

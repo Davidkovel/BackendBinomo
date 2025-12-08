@@ -36,11 +36,6 @@ public static class DependencyInjection
         services.AddScoped<IRedisPositionRepository, RedisPositionRepository>();
         services.AddScoped<ILimitOrderRepository, RedisLimitOrderRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        
-        // // Redis
-        // services.AddSingleton<IConnectionMultiplexer>(sp =>
-        //     ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
-
 
         return services;
     }

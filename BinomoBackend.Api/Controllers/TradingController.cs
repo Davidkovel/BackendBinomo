@@ -85,6 +85,7 @@ public class TradingController : ControllerBase
     [ProducesResponseType(typeof(List<ActivePositionResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActivePositions(CancellationToken ct)
     {
+        _logger.LogDebug("Getting active positions");
         var userId = GetUserId();
         if (userId == Guid.Empty)
             return Unauthorized();

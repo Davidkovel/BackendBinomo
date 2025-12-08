@@ -95,6 +95,18 @@
       interval: 10s
       timeout: 5s
       retries: 5
+      
+#  redis-node-2:
+#    image: redis:7
+#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+#    ports:
+#      - "7002:7002"
+#
+#  redis-node-3:
+#    image: redis:7
+#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+#    ports:
+#      - "7003:7003"
 
 #  binomobackend.api:
 #    image: binomobackend.api
